@@ -9,9 +9,11 @@ export default function Main() {
   const [newRepo, setNewRepo] = useState('');
   const [repositorios, setRepositorios] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null);
 
   function handleInputChange(e){
     setNewRepo(e.target.value);
+    setAlert(null);
   }
    const handleDelete = useCallback((repo) => {
      //verifica se é diferente do nome e retorna somente os diferentes dentro do find 
@@ -25,8 +27,18 @@ export default function Main() {
 
     async function submit(){ 
       setLoading(true);
+      setAlert(null);
       try{
+        if(newRepo === ''){
+          throw new Error('Você precisa indicar um repositorio');
+        }
         const response = await api.get(`repos/${newRepo}`);
+
+        const hasRepo = repositorios.find( repo => repo.name === newRepo);
+
+        if(hasRepo){
+          throw new Error('Repositorio Duplicado');
+        }
   
         const data = {
           name: response.data.full_name,
@@ -36,6 +48,7 @@ export default function Main() {
         setNewRepo('');
       
       }catch(e){
+        setAlert(true);
         console.log(e);
       }finally{
         setLoading(false);
@@ -54,7 +67,7 @@ export default function Main() {
         Meus Repositorios 
       </h1>
 
-      <Form onSubmit={handleSubmit}>
+      <Form onSubmit={handleSubmit} error={alert}>
         <input
          type="text"
          placeholder="Adicionar Repositorios"
