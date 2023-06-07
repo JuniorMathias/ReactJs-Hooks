@@ -53,3 +53,7 @@ export const BackButton = styled(Link)`
   outline: 0;
   background-color: transparent;
 `;
+
+export const IssuesList = styled.ul`
+  
+`;
