@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {Container, Owner, Loading, BackButton, IssuesList} from './styles';
+import {Container, Owner, Loading, BackButton, IssuesList,PageActions,FilterList} from './styles';
 import api from '../../services/api';
 import { FaArrowLeft} from 'react-icons/fa';
 
@@ -9,6 +9,12 @@ export default function Repository({match}){
     const [repositorio, setRepositorio] = useState({});
     const [issues, setIssues] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [filters, setFilters] = useState([
+      {state: 'all', label: 'Todas', active: true},
+      {state: 'open', label: 'Aberta', active: false},
+      {state: 'closed', label: 'Fechadas', active: false}
+    ])
   
     useEffect(()=> {
       
@@ -35,6 +41,25 @@ export default function Repository({match}){
   
     }, [match.params.repositorio]);
 
+    useEffect(()=> {
+      async function loadIssues(){
+        const nomeRepo = decodeURIComponent(match.params.repositorio);
+        const response = await api.get(`/repos/${nomeRepo}/issues`, {
+          params:{
+            state: 'open',
+            page,
+            per_page: 5
+          },
+        });
+        setIssues(response.data);
+      }
+      loadIssues();
+    },[match.params.repositorio, page]);
+
+    function handlePage(action){
+      setPage(action === 'back' ? page -1 : page + 1)
+    }
+
     if(loading){
         return (
             <Loading>
@@ -57,6 +82,17 @@ export default function Repository({match}){
         <h1>{repositorio.name}</h1>
         <p>{repositorio.description}</p>
       </Owner>
+      <FilterList>
+        {filters.map((filter,index) => (
+          <button
+           type='button'
+           key={filter.label}
+           onClick={() => {}}
+           >
+             {filter.label}
+           </button>
+        ))}
+      </FilterList>
       <IssuesList>
         {issues.map(issue => (
           <li key={String(issue.id)}>
@@ -76,6 +112,18 @@ export default function Repository({match}){
           </li>
         ))}
       </IssuesList>
+
+      <PageActions>
+        <button
+        type='button'
+         onClick={() => handlePage('back')}
+         disabled={page < 2}
+         >
+           Voltar
+        </button>
+
+        <button type='button' onClick={() => handlePage('next')}>Próxima</button>
+      </PageActions>
       </Container>
     )
   }
