@@ -15,9 +15,11 @@ export default function Repository({match}){
       {state: 'open', label: 'Aberta', active: false},
       {state: 'closed', label: 'Fechadas', active: false}
     ])
+
+    const [filterIndex, setFilterIndex] = useState(0);
   
     useEffect(()=> {
-      
+    
       async function load(){
         const nomeRepo = decodeURIComponent(match.params.repositorio);
   
@@ -25,40 +27,53 @@ export default function Repository({match}){
           api.get(`/repos/${nomeRepo}`),
           api.get(`/repos/${nomeRepo}/issues`, {
             params:{
-              state: 'open',
+              state: filters.find(f => f.active).state, 
               per_page: 5
             }
           })
         ]);
-        
+  
         setRepositorio(repositorioData.data);
         setIssues(issuesData.data);
+        console.log(issuesData.data);
+  
         setLoading(false);
   
       }
   
       load();
   
-    }, [match.params.repositorio]);
-
+    }, [filters, match.params.repositorio]);
+  
+  
     useEffect(()=> {
-      async function loadIssues(){
+  
+      async function loadIssue(){
         const nomeRepo = decodeURIComponent(match.params.repositorio);
+  
         const response = await api.get(`/repos/${nomeRepo}/issues`, {
           params:{
-            state: 'open',
+            state: filters[filterIndex].state,
             page,
-            per_page: 5
+            per_page: 5,
           },
         });
+  
         setIssues(response.data);
       }
-      loadIssues();
-    },[match.params.repositorio, page]);
-
+  
+      loadIssue();
+  
+    }, [filterIndex, filters, match.params.repositorio, page]);
+    
     function handlePage(action){
-      setPage(action === 'back' ? page -1 : page + 1)
+      setPage(action === 'back' ? page - 1 : page + 1 )
     }
+  
+    function handleFilter(index){
+      setFilterIndex(index);
+    }
+  
 
     if(loading){
         return (
@@ -70,33 +85,36 @@ export default function Repository({match}){
   
     return(
       <Container>
-          <BackButton to="/">
-            <FaArrowLeft color='#000' size={30} />
-          </BackButton>
-           <Owner>
-        {/* pegando os dados da api */}
+      <BackButton to="/">
+        <FaArrowLeft color="#000" size={30} />
+      </BackButton>
+
+      <Owner>
         <img 
-          src={repositorio.owner.avatar_url}
-           alt={repositorio.owner.login} 
+        src={repositorio.owner.avatar_url} 
+        alt={repositorio.owner.login} 
         />
         <h1>{repositorio.name}</h1>
         <p>{repositorio.description}</p>
       </Owner>
-      <FilterList>
-        {filters.map((filter,index) => (
+
+      <FilterList active={filterIndex}>
+        {filters.map((filter, index) => (
           <button
-           type='button'
+           type="button"
            key={filter.label}
-           onClick={() => {}}
-           >
-             {filter.label}
-           </button>
-        ))}
+           onClick={()=> handleFilter(index)}
+          >
+            {filter.label}
+          </button>
+        ) )}
       </FilterList>
+
       <IssuesList>
         {issues.map(issue => (
           <li key={String(issue.id)}>
             <img src={issue.user.avatar_url} alt={issue.user.login} />
+
             <div>
               <strong>
                 <a href={issue.html_url}>{issue.title}</a>
@@ -106,24 +124,29 @@ export default function Repository({match}){
                 ))}
 
               </strong>
-              <p> {issue.user.login}  </p>
+
+              <p>{issue.user.login}</p>
 
             </div>
+
           </li>
         ))}
       </IssuesList>
 
       <PageActions>
-        <button
-        type='button'
-         onClick={() => handlePage('back')}
-         disabled={page < 2}
-         >
-           Voltar
+        <button 
+        type="button" 
+        onClick={()=> handlePage('back') }
+        disabled={page < 2}
+        >
+          Voltar
         </button>
 
-        <button type='button' onClick={() => handlePage('next')}>Próxima</button>
+        <button type="button" onClick={()=> handlePage('next') }>
+          Proxima
+        </button>
       </PageActions>
-      </Container>
+
+    </Container>
     )
   }
